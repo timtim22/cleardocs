@@ -9,6 +9,10 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # MVC Demo Routes
+  root "mvc_demo#index"
+  get "hello" => "mvc_demo#hello" # mvc_demo is a controller and hello is an action
+  get "counter" => "mvc_demo#counter"
+  get "form_demo" => "mvc_demo#form_demo"
+  post "form_demo" => "mvc_demo#form_demo"
 end
