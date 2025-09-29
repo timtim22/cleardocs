@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Devise routes
+  devise_for :users
+  
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -9,10 +12,7 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # MVC Demo Routes
-  root "mvc_demo#index"
-  get "hello" => "mvc_demo#hello" # mvc_demo is a controller and hello is an action
-  get "counter" => "mvc_demo#counter"
-  get "form_demo" => "mvc_demo#form_demo"
-  post "form_demo" => "mvc_demo#form_demo"
+  # Home Routes
+  root "home#index"
+  post "upload_document", to: "home#upload_document"
 end
