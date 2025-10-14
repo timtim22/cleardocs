@@ -1,73 +1,176 @@
 <div class="container mx-auto px-4 py-8">
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-4xl font-bold text-gray-900 mb-8"><%= @welcome_message %></h1>
-    
-    <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
-      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Authentication Status</h2>
-      
-      <% if user_signed_in? %>
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          <p class="font-semibold">✓ You are signed in!</p>
-          <p>Welcome, <%= current_user.email %></p>
-        </div>
-        
-        <div class="space-y-2">
-          <%= link_to "Edit Profile", edit_user_registration_path, class: "inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded mr-2" %>
-          <%= link_to "Sign Out", destroy_user_session_path, data: { "turbo-method": :delete }, class: "inline-block bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded" %>
-        </div>
-      <% else %>
-        <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
-          <p class="font-semibold">⚠ You are not signed in</p>
-          <p>Please sign in or sign up to access all features.</p>
-        </div>
-        
-        <div class="space-y-2">
-          <%= link_to "Sign In", new_user_session_path, class: "inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded mr-2" %>
-          <%= link_to "Sign Up", new_user_registration_path, class: "inline-block bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded" %>
-        </div>
-      <% end %>
+    <!-- Header with Title -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-900"><%= @welcome_message %></h1>
     </div>
     
     <% if user_signed_in? %>
-      <div class="text-center mb-6">
-        <%= form_with url: upload_document_path, multipart: true, local: true do |form| %>
-          <%= form.file_field :document, accept: "image/*,.pdf,.doc,.docx", class: "mb-3", onchange: "showFileName(this)" %>
-          <br>
-          <div id="file_name" class="text-sm text-gray-600 mb-3" style="display: none;"></div>
-          <%= form.submit "Upload Document", class: "bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" %>
+      <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Upload Document</h2>
+        <%= form_with url: upload_document_path, multipart: true, local: true, id: "upload-form", class: "space-y-4" do |form| %>
+          
+          <!-- File Preview Area (hidden initially) -->
+          <div id="file-preview-area" class="hidden">
+            <div class="w-32 mx-auto">
+              <div class="bg-gray-50 rounded-lg p-2 hover:bg-gray-100 transition-colors duration-200">
+                <!-- Thumbnail - exactly like Your Documents -->
+                <div class="aspect-square mb-2 flex items-center justify-center bg-white rounded border-2 border-gray-200 overflow-hidden cursor-pointer" id="preview-thumbnail" onclick="previewSelectedFile()">
+                  <!-- Thumbnail will be inserted here -->
+                </div>
+                
+                <!-- Document info -->
+                <div class="text-center mb-2">
+                  <p class="text-xs font-medium text-gray-900 truncate" id="preview-filename" title=""></p>
+                  <p class="text-xs text-gray-500" id="preview-filesize"></p>
+                </div>
+                
+                <!-- Action buttons -->
+                <div class="flex flex-col space-y-1">
+                  <button type="button" onclick="previewSelectedFile()" class="w-full inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    Preview
+                  </button>
+                  <button type="button" onclick="cancelFileSelection()" class="w-full inline-flex items-center justify-center px-2 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Upload Area (shown initially) -->
+          <div id="upload-drop-area" class="flex items-center justify-center w-full">
+            <label for="document-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                </svg>
+                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                <p class="text-xs text-gray-500">PDF and DOCX files only (MAX. 10MB)</p>
+              </div>
+              <%= form.file_field :document, 
+                    accept: ".pdf,.docx", 
+                    class: "hidden", 
+                    id: "document-upload",
+                    onchange: "handleFileSelect(this)" %>
+            </label>
+          </div>
+          
+          <div class="text-center">
+            <%= form.submit "Upload Document", 
+                  class: "bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+                  id: "upload-btn",
+                  disabled: true %>
+          </div>
         <% end %>
       </div>
 
       <% if current_user.documents.any? %>
         <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Documents (<%= current_user.documents.count %>)</h2>
-          <div class="space-y-3">
-            <% current_user.documents.order(created_at: :desc).limit(5).each do |document| %>
-              <div class="flex items-center p-3 bg-gray-50 rounded">
-                <div class="flex-shrink-0 mr-3">
-                  <% if document.file.attached? && document.file.image? %>
-                    <%= image_tag document.file, 
-                        class: "w-8 h-8 object-cover rounded", 
-                        style: "width: 100px !important; height: 100px !important; max-width: 100px; max-height: 100px;",
-                        alt: document.title %>
+          <h2 class="text-xl font-semibold text-gray-800 mb-6">Your Documents (<%= current_user.documents.count %>)</h2>
+          
+          <!-- Grid layout for documents -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <% current_user.documents.order(created_at: :desc).each do |document| %>
+              <div class="group relative bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-200 cursor-pointer">
+                <!-- Document thumbnail -->
+                <div class="aspect-square mb-2 flex items-center justify-center bg-white rounded border-2 border-gray-200 overflow-hidden">
+                  <!-- File type icon based on extension -->
+                  <% file_extension = File.extname(document.title).downcase %>
+                  <% case file_extension %>
+                  <% when '.pdf' %>
+                    <div class="text-red-500">
+                      <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 18h12V6l-4-4H4v16zM9 2h2v4h4v12H5V2h4z"/>
+                      </svg>
+                      <p class="text-xs font-semibold mt-1">PDF</p>
+                    </div>
+                  <% when '.docx' %>
+                    <div class="text-blue-600">
+                      <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 18h12V6l-4-4H4v16zM9 2h2v4h4v12H5V2h4z"/>
+                      </svg>
+                      <p class="text-xs font-semibold mt-1">DOCX</p>
+                    </div>
                   <% else %>
-                    <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                      <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="text-gray-500">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                       </svg>
+                      <p class="text-xs font-semibold mt-1">FILE</p>
                     </div>
                   <% end %>
                 </div>
-                <div class="flex-grow">
-                  <p class="text-sm font-medium text-gray-900"><%= document.title %></p>
-                  <p class="text-xs text-gray-500"><%= time_ago_in_words(document.created_at) %> ago</p>
+                
+                <!-- Document info -->
+                <div class="text-center">
+                  <p class="text-xs font-medium text-gray-900 truncate" title="<%= document.title %>">
+                    <%= document.title.length > 15 ? document.title[0...12] + "..." : document.title %>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1"><%= time_ago_in_words(document.created_at) %> ago</p>
+                  <% if document.has_extracted_text? %>
+                    <p class="text-xs text-green-600 mt-1">✓ Text extracted</p>
+                  <% else %>
+                    <p class="text-xs text-yellow-600 mt-1">⏳ Processing...</p>
+                  <% end %>
+                </div>
+                
+                <!-- Hover overlay with actions -->
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div class="flex space-x-1">
+                    <% if document.file.attached? %>
+                      <%= link_to rails_blob_path(document.file, disposition: "attachment"), 
+                            class: "bg-white text-gray-700 p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors",
+                            title: "Download" do %>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                      <% end %>
+                    <% end %>
+                    
+                    <% if document.has_extracted_text? %>
+                      <button onclick="viewDocumentText(<%= document.id %>)" 
+                              class="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+                              title="View Extracted Text">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                      </button>
+                    <% end %>
+                    
+                    <%= link_to delete_document_path(document), 
+                          method: :delete,
+                          data: { 
+                            confirm: "Are you sure you want to delete '#{document.title}'? This action cannot be undone.",
+                            turbo_method: :delete
+                          },
+                          class: "bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors",
+                          title: "Delete" do %>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    <% end %>
+                  </div>
                 </div>
               </div>
             <% end %>
-            <% if current_user.documents.count > 5 %>
-              <p class="text-xs text-gray-500 text-center">... and <%= current_user.documents.count - 5 %> more documents</p>
-            <% end %>
           </div>
+          
+          <!-- Show all documents link if there are many -->
+          <% if current_user.documents.count > 12 %>
+            <div class="text-center mt-6">
+              <button class="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
+                View all <%= current_user.documents.count %> documents →
+              </button>
+            </div>
+          <% end %>
         </div>
       <% end %>
     <% end %>
@@ -75,13 +178,324 @@
 </div>
 
 <script>
-function showFileName(input) {
-  const fileNameDiv = document.getElementById('file_name');
+let selectedFileData = null;
+
+function handleFileSelect(input) {
+  const uploadDropArea = document.getElementById('upload-drop-area');
+  const filePreviewArea = document.getElementById('file-preview-area');
+  const previewThumbnail = document.getElementById('preview-thumbnail');
+  const previewFilename = document.getElementById('preview-filename');
+  const previewFilesize = document.getElementById('preview-filesize');
+  const uploadBtn = document.getElementById('upload-btn');
+  
   if (input.files && input.files[0]) {
-    fileNameDiv.textContent = 'Selected: ' + input.files[0].name;
-    fileNameDiv.style.display = 'block';
-  } else {
-    fileNameDiv.style.display = 'none';
+    const file = input.files[0];
+    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    // Validate file type - only allow PDF and DOCX
+    if (extension !== 'pdf' && extension !== 'docx') {
+      showFileTypeError(file.name, extension);
+      input.value = ''; // Clear the input
+      return;
+    }
+    
+    // Store file data for preview
+    selectedFileData = {
+      file: file,
+      name: file.name,
+      size: fileSize,
+      type: file.type
+    };
+    
+    // Update file info
+    previewFilename.textContent = file.name;
+    previewFilesize.textContent = `${fileSize} MB`;
+    
+    // Show file type icon
+    let iconHTML = '';
+    if (extension === 'pdf') {
+      iconHTML = `<div class="text-red-500 text-center"><svg class="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6l-4-4H4v16zM9 2h2v4h4v12H5V2h4z"/></svg><p class="text-xs font-semibold mt-1">PDF</p></div>`;
+    } else if (extension === 'docx') {
+      iconHTML = `<div class="text-blue-600 text-center"><svg class="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6l-4-4H4v16zM9 2h2v4h4v12H5V2h4z"/></svg><p class="text-xs font-semibold mt-1">DOCX</p></div>`;
+    }
+    previewThumbnail.innerHTML = iconHTML;
+    
+    // Hide upload area, show preview
+    uploadDropArea.classList.add('hidden');
+    filePreviewArea.classList.remove('hidden');
+    
+    // Enable upload button
+    uploadBtn.disabled = false;
   }
 }
+
+function cancelFileSelection() {
+  const input = document.getElementById('document-upload');
+  const uploadDropArea = document.getElementById('upload-drop-area');
+  const filePreviewArea = document.getElementById('file-preview-area');
+  const uploadBtn = document.getElementById('upload-btn');
+  
+  // Clear file input
+  input.value = '';
+  selectedFileData = null;
+  
+  // Show upload area, hide preview
+  uploadDropArea.classList.remove('hidden');
+  filePreviewArea.classList.add('hidden');
+  
+  // Disable upload button
+  uploadBtn.disabled = true;
+}
+
+function showFileTypeError(filename, extension) {
+  // Create and show error message
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
+  errorDiv.innerHTML = `
+    <div class="flex items-start">
+      <svg class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <div>
+        <h4 class="font-semibold">Unsupported File Type</h4>
+        <p class="text-sm mt-1">The file "${filename}" (${extension.toUpperCase()}) is not supported. Please upload only PDF or DOCX files.</p>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(errorDiv);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (errorDiv.parentNode) {
+      errorDiv.parentNode.removeChild(errorDiv);
+    }
+  }, 5000);
+}
+
+function previewSelectedFile() {
+  if (!selectedFileData) return;
+  
+  const modal = document.getElementById('upload-preview-modal');
+  const title = document.getElementById('upload-preview-title');
+  const content = document.getElementById('upload-preview-content');
+  
+  title.textContent = selectedFileData.name;
+  content.innerHTML = `
+    <div class="text-center py-12">
+      <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <p class="text-gray-600 mb-2">${selectedFileData.name}</p>
+      <p class="text-sm text-gray-500">${selectedFileData.size} MB</p>
+      <p class="text-sm text-gray-500 mt-4">Full preview available after upload</p>
+    </div>
+  `;
+  
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeUploadPreview() {
+  const modal = document.getElementById('upload-preview-modal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+// Add drag and drop functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadArea = document.querySelector('label[for="document-upload"]');
+  const fileInput = document.getElementById('document-upload');
+  
+  if (uploadArea && fileInput) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    uploadArea.addEventListener('drop', handleDrop, false);
+  }
+  
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  function highlight(e) {
+    uploadArea.classList.add('border-indigo-500', 'bg-indigo-50');
+  }
+  
+  function unhighlight(e) {
+    uploadArea.classList.remove('border-indigo-500', 'bg-indigo-50');
+  }
+  
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    if (files.length > 0) {
+      fileInput.files = files;
+      handleFileSelect(fileInput);
+    }
+  }
+});
 </script>
+
+<!-- User Profile Menu (Bottom Left) -->
+<% if user_signed_in? %>
+  <div class="fixed bottom-0 left-0 p-3 z-50" style="width: 260px;">
+    <!-- Dropdown Menu (positioned above) -->
+    <div id="user-dropdown-menu" class="hidden mb-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden" style="display: none;">
+      <!-- Menu Items -->
+      <div class="py-1">
+        <%= link_to edit_user_registration_path, class: "flex items-center px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 transition-colors" do %>
+          <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span class="font-medium">Edit Profile</span>
+        <% end %>
+        
+        <div class="border-t border-gray-200 my-1"></div>
+        
+        <%= link_to destroy_user_session_path, data: { "turbo-method": :delete }, class: "flex items-center px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 transition-colors" do %>
+          <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span class="font-medium">Log out</span>
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- User Profile Button (below menu) -->
+    <button onclick="toggleUserMenu()" id="user-menu-button" class="flex items-center w-full px-3 py-2.5 text-sm bg-white hover:bg-gray-100 rounded-xl transition-colors focus:outline-none border border-gray-200">
+      <div class="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold mr-3 text-base">
+        <%= current_user.email[0].upcase %>
+      </div>
+      <div class="flex-1 text-left overflow-hidden">
+        <p class="text-gray-900 font-medium text-sm truncate"><%= current_user.email.split('@').first %></p>
+        <p class="text-xs text-gray-500">Signed in as</p>
+      </div>
+    </button>
+  </div>
+  
+  <script>
+    function toggleUserMenu() {
+      const menu = document.getElementById('user-dropdown-menu');
+      if (menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'block';
+        menu.classList.remove('hidden');
+      } else {
+        menu.style.display = 'none';
+        menu.classList.add('hidden');
+      }
+    }
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const button = document.getElementById('user-menu-button');
+      const menu = document.getElementById('user-dropdown-menu');
+      
+      if (button && menu && !button.contains(event.target) && !menu.contains(event.target)) {
+        menu.style.display = 'none';
+        menu.classList.add('hidden');
+      }
+    });
+  </script>
+<% end %>
+
+<!-- Upload Preview Modal -->
+<div id="upload-preview-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onclick="closeUploadPreview()">
+  <div class="relative bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden" onclick="event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <h3 id="upload-preview-title" class="text-lg font-semibold text-gray-900 truncate"></h3>
+      <button onclick="closeUploadPreview()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Modal Content -->
+    <div id="upload-preview-content" class="p-6 overflow-auto max-h-[70vh] flex items-center justify-center bg-gray-100">
+      <!-- Content will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Close modal with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeUploadPreview();
+      closeTextModal();
+    }
+  });
+
+  // Function to view extracted text
+  function viewDocumentText(documentId) {
+    fetch(`/view_text/${documentId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        const modal = document.getElementById('text-modal');
+        const title = document.getElementById('text-modal-title');
+        const content = document.getElementById('text-modal-content');
+        const charCount = document.getElementById('text-char-count');
+        
+        title.textContent = data.title;
+        content.textContent = data.extracted_text;
+        charCount.textContent = `${data.character_count} characters`;
+        
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      })
+      .catch(error => {
+        console.error('Error fetching document text:', error);
+        alert('Failed to load document text');
+      });
+  }
+
+  function closeTextModal() {
+    const modal = document.getElementById('text-modal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+</script>
+
+<!-- Text Modal -->
+<div id="text-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onclick="closeTextModal()">
+  <div class="relative bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden" onclick="event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div>
+        <h3 id="text-modal-title" class="text-lg font-semibold text-gray-900 truncate"></h3>
+        <p id="text-char-count" class="text-sm text-gray-500"></p>
+      </div>
+      <button onclick="closeTextModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Modal Content -->
+    <div class="p-6 overflow-auto max-h-[70vh] bg-gray-50">
+      <div class="bg-white rounded-lg p-4 border border-gray-200">
+        <pre id="text-modal-content" class="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed"></pre>
+      </div>
+    </div>
+  </div>
+</div>

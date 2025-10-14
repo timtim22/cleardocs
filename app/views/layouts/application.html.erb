@@ -23,6 +23,64 @@
   </head>
 
   <body>
+    <!-- Flash Messages -->
+    <% if flash.any? %>
+      <div class="fixed top-4 right-4 z-50 space-y-2">
+        <% flash.each do |type, message| %>
+          <% 
+            case type.to_s
+            when 'notice'
+              css_class = "bg-green-50 border border-green-200 text-green-800"
+              icon_color = "text-green-400"
+              icon_path = "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            when 'alert', 'error'
+              css_class = "bg-red-50 border border-red-200 text-red-800"
+              icon_color = "text-red-400"
+              icon_path = "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            else
+              css_class = "bg-blue-50 border border-blue-200 text-blue-800"
+              icon_color = "text-blue-400"
+              icon_path = "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            end
+          %>
+          <div class="<%= css_class %> p-4 rounded-lg shadow-lg max-w-sm" id="flash-<%= type %>">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 <%= icon_color %>" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="<%= icon_path %>" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium"><%= message %></p>
+              </div>
+              <div class="ml-auto pl-3">
+                <div class="-mx-1.5 -my-1.5">
+                  <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="<%= icon_color %> hover:bg-opacity-20 rounded-lg p-1.5 inline-flex h-8 w-8">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- Auto-hide flash messages after 5 seconds -->
+      <script>
+        setTimeout(function() {
+          document.querySelectorAll('[id^="flash-"]').forEach(function(element) {
+            element.style.transition = 'opacity 0.5s ease-out';
+            element.style.opacity = '0';
+            setTimeout(function() {
+              element.remove();
+            }, 500);
+          });
+        }, 5000);
+      </script>
+    <% end %>
+    
     <%= yield %>
   </body>
 </html>
