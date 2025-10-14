@@ -69,3 +69,7 @@ gem 'devise', '~> 4.9', '>= 4.9.3'
 # Text extraction gems
 gem 'pdf-reader', '~> 2.12'  # For PDF text extraction
 gem 'docx', '~> 0.8.0'       # For DOCX text extraction
+
+# OCR gems for scanned documents
+gem 'rtesseract', '~> 3.1'   # Tesseract OCR wrapper
+gem 'mini_magick', '~> 4.12' # Image processing (required for PDF to image conversion)

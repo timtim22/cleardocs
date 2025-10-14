@@ -1,9 +1,10 @@
 class HomeController < ApplicationController
-  before_action :authenticate_user!, only: [:index, :upload_document, :delete_document]
+  before_action :authenticate_user!, only: [:index, :upload_document, :delete_document, :extract_text]
 
   def index
     if user_signed_in?
       @welcome_message = "Welcome to ClearDocs"
+      @documents = current_user.documents.order(created_at: :desc)
     else
       @welcome_message = "Please sign in to access ClearDocs"
     end
@@ -19,7 +20,15 @@ class HomeController < ApplicationController
       )
       
       if document.save
-        flash[:notice] = "Document '#{uploaded_file.original_filename}' uploaded successfully!"
+        # Extract text immediately using the service
+        extraction_result = DocumentTextExtractionService.extract(document)
+        
+        if extraction_result[:success]
+          chars = extraction_result[:text_length]
+          flash[:notice] = "✅ Success! Document '#{uploaded_file.original_filename}' uploaded and #{chars} characters extracted."
+        else
+          flash[:alert] = "Document '#{uploaded_file.original_filename}' uploaded but text extraction failed: #{extraction_result[:error]}"
+        end
       else
         # Check if the error is related to file type
         if document.errors[:file].any?
@@ -33,6 +42,16 @@ class HomeController < ApplicationController
       flash[:alert] = "Please select a file to upload."
     end
     redirect_to root_path
+  end
+
+  def extract_text
+    @document = current_user.documents.find(params[:id])
+    
+    result = DocumentTextExtractionService.extract(@document)
+    
+    render json: result
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: "Document not found" }, status: :not_found
   end
 
   def delete_document

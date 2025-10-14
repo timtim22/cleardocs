@@ -6,9 +6,9 @@
     </div>
     
     <% if user_signed_in? %>
-      <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+      <div class="bg-white shadow-lg rounded-lg p-6 mb-8" data-controller="upload">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Upload Document</h2>
-        <%= form_with url: upload_document_path, multipart: true, local: true, id: "upload-form", class: "space-y-4" do |form| %>
+        <%= form_with url: upload_document_path, multipart: true, local: true, id: "upload-form", class: "space-y-4", data: { upload_target: "form" } do |form| %>
           
           <!-- File Preview Area (hidden initially) -->
           <div id="file-preview-area" class="hidden">

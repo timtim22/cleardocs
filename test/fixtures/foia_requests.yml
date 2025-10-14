@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  request_number: MyString
+  requester_name: MyString
+  requester_email: MyString
+  requester_organization: MyString
+  subject: MyString
+  description: MyText
+  received_at: 2025-10-14 22:20:06
+  due_on: 2025-10-14 22:20:06
+  status: 1
+  user: one
+
+two:
+  request_number: MyString
+  requester_name: MyString
+  requester_email: MyString
+  requester_organization: MyString
+  subject: MyString
+  description: MyText
+  received_at: 2025-10-14 22:20:06
+  due_on: 2025-10-14 22:20:06
+  status: 1
+  user: two

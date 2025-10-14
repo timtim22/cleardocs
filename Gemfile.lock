@@ -165,6 +165,7 @@ GEM
       net-smtp
     marcel (1.1.0)
     matrix (0.4.3)
+    mini_magick (4.13.2)
     mini_mime (1.1.5)
     minitest (5.25.5)
     msgpack (1.8.0)
@@ -281,6 +282,7 @@ GEM
       actionpack (>= 5.2)
       railties (>= 5.2)
     rexml (3.4.4)
+    rtesseract (3.1.4)
     rubocop (1.81.0)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -410,11 +412,13 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   kamal
+  mini_magick (~> 4.12)
   pdf-reader (~> 2.12)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.2, >= 8.0.2.1)
+  rtesseract (~> 3.1)
   rubocop-rails-omakase
   selenium-webdriver
   solid_cable

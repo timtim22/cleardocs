@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   # Home Routes
   root "home#index"
   post "upload_document", to: "home#upload_document"
+  post "extract_text/:id", to: "home#extract_text", as: :extract_text
   delete "delete_document/:id", to: "home#delete_document", as: :delete_document
   get "view_text/:id", to: "home#view_text", as: :view_document_text
 end

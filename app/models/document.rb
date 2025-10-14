@@ -1,18 +1,28 @@
-require 'pdf-reader'
-require 'docx'
-require 'tempfile'
-
 class Document < ApplicationRecord
   belongs_to :user
+  belongs_to :foia_request, optional: true
   has_one_attached :file
+
+  # Processing status enum
+  enum :processing_status, {
+    pending: 0,
+    processing: 1,
+    completed: 2,
+    failed: 3
+  }
 
   validates :title, presence: true
   validates :file, presence: true
   validate :acceptable_file_type
 
-  # extracted_text column stores the text content extracted from PDF/DOCX files
-  after_create :extract_text_from_file
-  after_update :extract_text_from_file, if: :saved_change_to_file?
+  # Callbacks
+  after_initialize :set_default_processing_status, if: :new_record?
+  before_save :set_file_metadata
+
+  # Scopes
+  scope :by_foia_request, ->(request_id) { where(foia_request_id: request_id) }
+  scope :processed, -> { where(processing_status: :completed) }
+  scope :unprocessed, -> { where.not(processing_status: :completed) }
 
   def file_url
     return nil unless file.attached?
@@ -25,111 +35,81 @@ class Document < ApplicationRecord
   end
 
   def has_extracted_text?
-    extracted_text.present?
+    extracted_text.present? || page_texts.present?
   end
 
-  def extract_text!
-    extracted_content = extract_text_from_attached_file
-    update_column(:extracted_text, extracted_content) if extracted_content.present?
+  def get_page_text(page_number)
+    return nil unless page_texts.present?
+    page_texts[page_number.to_s]
+  end
+
+  def total_pages
+    page_count || 0
+  end
+
+  def file_extension
+    return nil unless file.attached?
+    File.extname(file.blob.filename.to_s).downcase
+  end
+
+  def file_icon_class
+    case file_extension
+    when '.pdf'
+      'text-red-500'
+    when '.docx'
+      'text-blue-600'
+    when '.txt'
+      'text-gray-600'
+    else
+      'text-gray-500'
+    end
+  end
+
+  def formatted_file_size
+    return 'N/A' unless file_size_bytes.present?
+    
+    if file_size_bytes < 1024
+      "#{file_size_bytes} B"
+    elsif file_size_bytes < 1024 * 1024
+      "#{(file_size_bytes / 1024.0).round(2)} KB"
+    else
+      "#{(file_size_bytes / (1024.0 * 1024)).round(2)} MB"
+    end
   end
 
   private
 
-  def extract_text_from_file
-    return unless file.attached?
-    
-    # For immediate extraction (synchronous) - useful for testing
-    if Rails.env.development? || Rails.env.test?
-      extract_text!
-    else
-      # Use a background job for text extraction to avoid blocking the main thread
-      ExtractTextJob.perform_later(self)
-    end
-  end
-
-  def extract_text_from_attached_file
-    return nil unless file.attached?
-
-    # Get the file content
-    file_content = file.download
-    
-    # Determine extraction method based on content type
-    case file.content_type
-    when 'application/pdf'
-      extract_text_from_pdf(file_content)
-    when 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      extract_text_from_docx(file_content)
-    else
-      nil
-    end
-  rescue => e
-    Rails.logger.error "Text extraction failed: #{e.message}"
-    nil
-  end
-
-  def extract_text_from_pdf(file_content)
-    # Create a temporary file to work with pdf-reader
-    Tempfile.create(['document', '.pdf']) do |temp_file|
-      temp_file.binmode
-      temp_file.write(file_content)
-      temp_file.rewind
-
-      reader = PDF::Reader.new(temp_file.path)
-      text_content = []
-      
-      # Limit to first 50 pages to prevent timeout
-      pages_to_process = [reader.page_count, 50].min
-      
-      (1..pages_to_process).each do |page_num|
-        begin
-          page = reader.page(page_num)
-          page_text = page.text.strip
-          text_content << page_text unless page_text.empty?
-        rescue => e
-          Rails.logger.warn "Failed to extract text from page #{page_num}: #{e.message}"
-          next
-        end
-      end
-      
-      extracted_text = text_content.join("\n\n")
-      Rails.logger.info "Extracted #{extracted_text.length} characters from #{pages_to_process} pages"
-      extracted_text
-    end
-  end
-
-  def extract_text_from_docx(file_content)
-    # Create a temporary file to work with docx gem
-    Tempfile.create(['document', '.docx']) do |temp_file|
-      temp_file.binmode
-      temp_file.write(file_content)
-      temp_file.rewind
-
-      doc = Docx::Document.open(temp_file.path)
-      text_content = []
-      
-      doc.paragraphs.each do |paragraph|
-        paragraph_text = paragraph.text.strip
-        text_content << paragraph_text unless paragraph_text.empty?
-      end
-      
-      text_content.join("\n\n")
-    end
-  end
-
   def acceptable_file_type
     return unless file.attached?
 
-    acceptable_types = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    acceptable_types = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ]
+    
     unless acceptable_types.include?(file.blob.content_type)
-      errors.add(:file, 'must be a PDF or DOCX file')
+      errors.add(:file, 'must be a PDF, DOCX, or TXT file')
     end
 
     # Also check file extension as a backup
     if file.blob.filename.present?
       extension = File.extname(file.blob.filename.to_s).downcase
-      unless ['.pdf', '.docx'].include?(extension)
-        errors.add(:file, 'must have a .pdf or .docx extension')
+      unless ['.pdf', '.docx', '.txt'].include?(extension)
+        errors.add(:file, 'must have a .pdf, .docx, or .txt extension')
       end
     end
+  end
+
+  def set_default_processing_status
+    self.processing_status ||= :pending
+  end
+
+  def set_file_metadata
+    return unless file.attached?
+    return if file_type.present? && file_size_bytes.present? # Already set
+    
+    self.file_type = file.blob.content_type
+    self.file_size_bytes = file.blob.byte_size
   end
 end

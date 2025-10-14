@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_07_154509) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_14_172052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,7 +48,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_07_154509) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "extracted_text"
+    t.bigint "foia_request_id"
+    t.jsonb "page_texts", default: {}
+    t.integer "processing_status", default: 0
+    t.string "file_type"
+    t.bigint "file_size_bytes"
+    t.integer "page_count", default: 0
+    t.index ["foia_request_id"], name: "index_documents_on_foia_request_id"
+    t.index ["processing_status"], name: "index_documents_on_processing_status"
     t.index ["user_id"], name: "index_documents_on_user_id"
+  end
+
+  create_table "foia_requests", force: :cascade do |t|
+    t.string "request_number"
+    t.string "requester_name"
+    t.string "requester_email"
+    t.string "requester_organization"
+    t.string "subject"
+    t.text "description"
+    t.datetime "received_at"
+    t.datetime "due_on"
+    t.integer "status"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["request_number"], name: "index_foia_requests_on_request_number", unique: true
+    t.index ["user_id"], name: "index_foia_requests_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -65,5 +90,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_07_154509) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "documents", "foia_requests"
   add_foreign_key "documents", "users"
+  add_foreign_key "foia_requests", "users"
 end
