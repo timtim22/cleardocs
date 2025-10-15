@@ -72,4 +72,4 @@ gem 'docx', '~> 0.8.0'       # For DOCX text extraction
 
 # OCR gems for scanned documents
 gem 'rtesseract', '~> 3.1'   # Tesseract OCR wrapper
-gem 'mini_magick', '~> 4.12' # Image processing (required for PDF to image conversion)
+gem 'mini_magick', '~> 5.3' # Image processing (required for PDF to image conversion)
