@@ -110,9 +110,9 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
-    docx (0.8.0)
+    docx (0.10.0)
       nokogiri (~> 1.13, >= 1.13.0)
-      rubyzip (~> 2.0)
+      rubyzip (>= 2.0, < 4)
     dotenv (3.1.8)
     drb (2.2.3)
     ed25519 (1.4.0)
@@ -313,7 +313,7 @@ GEM
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
-    rubyzip (2.4.1)
+    rubyzip (3.2.0)
     securerandom (0.4.1)
     selenium-webdriver (4.35.0)
       base64 (~> 0.2)
@@ -408,7 +408,7 @@ DEPENDENCIES
   capybara
   debug
   devise (~> 4.9, >= 4.9.3)
-  docx (~> 0.8.0)
+  docx (~> 0.10.0)
   importmap-rails
   jbuilder
   kamal
